@@ -1,0 +1,66 @@
+name: 'Build a debug or release APK'
+description: 'Build a debug or release APK with Gradle'
+
+branding:
+  icon: 'package'
+  color: 'green'
+
+inputs:
+  java-version:
+    description: 'The JDK version to use to perform all operations'
+    required: false
+    default: '17'
+  java-distribution:
+    description: 'The name of the JDK distribution to use'
+    required: false
+    default: 'temurin'
+  encoded-keystore:
+    description: 'The Base64 encoded keystore file used to sign the release APK'
+    required: false
+  keystore-password:
+    description: 'The password of the keystore used to sign the release APK'
+    required: false
+  alias:
+    description: 'The keystore's alias used to sign the release APK'
+    required: false
+  alias-password:
+    description: 'The password of the keystore's alias used to sign the release APK'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check the code
+      uses: actions/checkout@v4
+    
+    - name: Setup JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: ${{ inputs.java-distribution }}
+
+    - name: Decode the keystore when provided
+      if: ${{ inputs.encoded-keystore }}
+      run: echo "${{ inputs.encoded-keystore }}" | base64 -di > $GITHUB_WORKSPACE/keystore.keystore
+      shell: bash
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Build debug APK
+      if: ${{ !inputs.encoded-keystore }}
+      shell: bash
+      run: ./gradlew assembleDebug
+
+    - name: Build release APK with the provided keystore
+      if: ${{ inputs.encoded-keystore }}
+      shell: bash
+      env:
+        KEYSTORE_PASSWORD: ${{ inputs.keystore-password }}
+        KEYSTORE_ALIAS: ${{ inputs.alias }}
+        KEY_PASSWORD: ${{ inputs.alias-password }}
+      run: ./gradlew assembleRelease
+
+    - name: Remove decrypted keystore file
+      shell: bash
+      run: rm "$GITHUB_WORKSPACE/keystore.keystore"
