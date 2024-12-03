@@ -1,5 +1,5 @@
-name: 'Build a debug or release APK'
-description: 'Build a debug or release APK with Gradle'
+name: 'Build a debug or release APK using Gradle'
+description: 'Custom GitHub Action to ease the process of building a debug or release APK using Gradle'
 
 branding:
   icon: 'package'
